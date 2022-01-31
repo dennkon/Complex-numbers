@@ -1,0 +1,54 @@
+# Файл docker-compose должен начинаться с указания версии.
+version: '3'
+
+# Сети
+networks:
+  internal:
+
+# Ниже список наших сервисов (контейнеров). NGINX, PHP, MySQL, phpMyAdmin
+services:
+  nginx:
+    # Какую версию образа nginx из официального хранилища DockerHub используем
+    image: nginx:stable-alpine
+    container_name: nginx
+    # Ниже прокидываем порты. NGINX в контейнере работает на дефолтном 80, а мы возьмем 8000
+    ports:
+      - "80:80"
+    # Монтируем директории, слева директории на основной системе, справа - куда они монтируются в контейнере
+    volumes:
+      - ./sites:/var/www
+      - ./config/nginx:/etc/nginx/conf.d
+      - ./data/logs:/var/log/nginx/
+    # Зависимости
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - internal
+  php:
+    build:
+      context: ./config/php
+      dockerfile: Dockerfile
+    container_name: php
+    volumes:
+      - ./sites:/var/www
+      - ./config/php/php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - "9000:9000"
+    networks:
+      - internal
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    command: --innodb_use_native_aio=0
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    # Задаем пароль для root пользователя
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    networks:
+      - internal

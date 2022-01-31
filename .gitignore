@@ -1,0 +1,10 @@
+/.idea/
+
+/.env
+/docker-compose.override.yml
+
+/logs/*
+/mysql/*
+
+!.gitkeep
+!.gitignore
